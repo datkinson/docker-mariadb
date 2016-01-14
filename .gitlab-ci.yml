@@ -1,0 +1,29 @@
+stages:
+  - test
+  - deploy
+  - cleanup
+
+build_container_job:
+  stage: test
+  script:
+    - 'docker build -t $CI_BUILD_REF .'
+  tags:
+    - docker-builder
+
+deploy_container_job:
+  stage: deploy
+  script:
+    - docker build -t registry.noprobe.co.uk/mariadb:$CI_BUILD_REF_NAME .
+    - docker push registry.noprobe.co.uk/mariadb:$CI_BUILD_REF_NAME
+    - docker rmi registry.noprobe.co.uk/mariadb:$CI_BUILD_REF_NAME
+  tags:
+    - docker-builder
+    
+cleanup_job:
+  stage: cleanup
+  script:
+  - docker rm -f $CI_BUILD_REF
+  when: always
+  allow_failure: true
+  tags:
+    - docker-builder
